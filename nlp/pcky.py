@@ -1,3 +1,4 @@
+import sys
 
 class GrammarSymbol:
     """Names for productions"""
@@ -256,7 +257,8 @@ class SentencesParser:
 
     def writeParseTrees(self, wordsArray, outFile):
         i = 0
-        for prod in self.parseSentence(wordsArray):
+        for prod in reversed(sorted(self.parseSentence(wordsArray), \
+                               key=lambda p: p.probability)):
             print(productionHierarchyString(prod, 4))
             outFile.write(productionHierarchyTreebankFormat(prod) + "\n")
             i += 1
@@ -266,9 +268,11 @@ class SentencesParser:
             for s in self.tokenizeSentences():
                 self.writeParseTrees(s, outFile)
 
-
+                
 if __name__ == "__main__":
-    sp = SentencesParser('T-Rules.txt', 'NT-Rules.txt', \
-                                 'Test.txt', 'output.txt')
+    if len(sys.argv) < 5:
+        print("usage: python " + sys.argv[0] + " T_RULES_FILE NT_RULES_FILE SENTENCES_FILE OUTPUT_FILE")
+        sys.exit(-1)
+    sp = SentencesParser(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     sp.writeAllParseTrees()
 
