@@ -25,6 +25,17 @@ def productionHierarchyString(aProduction, indent=0):
         res += (" " * indent) + productionHierarchyString(elem, indent + 4)
     return res 
 
+def productionHierarchyTreebankFormat(aProduction, indent=0):
+    res = (" " * indent) + "(" + aProduction.name
+    if aProduction.p1.isTerminal() and aProduction.p2 == None:
+        res += " " + aProduction.p1.name
+    if len(aProduction.tree) > 0:
+        for prod in aProduction.tree:
+            res += "\n" + (" " * indent) + \
+                productionHierarchyTreebankFormat(prod, indent + 4)
+    res += ")"
+    return res
+
 
 class Production:
     """Production in Chomsky NF"""
@@ -246,8 +257,9 @@ class SentencesParser:
     def printParseTrees(self, wordsArray):
         i = 0
         for prod in self.parseSentence(wordsArray):
-            print "---"
-            print(productionHierarchyString(prod, 8))
+            print ""
+            #print(productionHierarchyString(prod, 8))
+            print(productionHierarchyTreebankFormat(prod, 4))
             i += 1
 
     def printAllParseTrees(self):
