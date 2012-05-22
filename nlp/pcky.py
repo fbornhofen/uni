@@ -254,22 +254,21 @@ class SentencesParser:
         cky = CKY(self.grammar, wordsArray)
         return cky.parse()
 
-    def printParseTrees(self, wordsArray):
+    def writeParseTrees(self, wordsArray, outFile):
         i = 0
         for prod in self.parseSentence(wordsArray):
-            print ""
-            #print(productionHierarchyString(prod, 8))
-            print(productionHierarchyTreebankFormat(prod, 4))
+            print(productionHierarchyString(prod, 4))
+            outFile.write(productionHierarchyTreebankFormat(prod) + "\n")
             i += 1
 
-    def printAllParseTrees(self):
-        for s in self.tokenizeSentences():
-            print("### PARSE TREES FOR " + str(s) + " ###")
-            self.printParseTrees(s)
+    def writeAllParseTrees(self):
+        with open(self.outFile, "w") as outFile:
+            for s in self.tokenizeSentences():
+                self.writeParseTrees(s, outFile)
 
 
 if __name__ == "__main__":
     sp = SentencesParser('T-Rules.txt', 'NT-Rules.txt', \
                                  'Test.txt', 'output.txt')
-    sp.printAllParseTrees()
+    sp.writeAllParseTrees()
 
