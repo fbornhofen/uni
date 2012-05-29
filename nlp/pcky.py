@@ -260,6 +260,7 @@ class SentencesParser:
         for prod in reversed(sorted(self.parseSentence(wordsArray), \
                                key=lambda p: p.probability)):
             print(productionHierarchyString(prod, 4))
+            outFile.write("P = " + str(prod.probability) + "\n")
             outFile.write(productionHierarchyTreebankFormat(prod) + "\n")
             i += 1
 
