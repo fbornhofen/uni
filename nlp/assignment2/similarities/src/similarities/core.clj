@@ -31,7 +31,9 @@
        array-of-lines))
 
 (defn all-words [array-of-lines]
-  (reduce concat (tokenized-lines array-of-lines)))
+  (for [line (tokenized-lines array-of-lines)
+        word line]
+    word))
 
 (defn number-of-words-in-file [file-name]
   (reduce + (map count (tokenized-lines (read-lines file-name)))))
