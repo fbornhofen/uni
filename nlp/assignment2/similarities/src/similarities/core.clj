@@ -1,6 +1,5 @@
 (ns similarities.core)
 
-
 (use '[clojure.string :only [split]])
 (use 'clojure.set)
 
@@ -8,7 +7,6 @@
 (import 'java.io.FileReader)
 
 (defrecord VocabularyWord [word positions pos-tags context-words])
-
 
 (defn vw-update [vw word position pos-tag context-words]
   (if (nil? vw)
@@ -21,7 +19,6 @@
                       (conj (:pos-tags vw) pos-tag)
                       (union (:context-words vw) context-words))))
 
-
 (defn read-lines [file-name]
   (with-open [rdr (BufferedReader. (FileReader. file-name))]
     (doall (line-seq rdr))))
@@ -31,13 +28,10 @@
        array-of-lines))
 
 (defn all-words [array-of-lines]
-  (for [line (tokenized-lines array-of-lines)
-        word line]
-    word))
-
+  (flatten (tokenized-lines array-of-lines)))
+  
 (defn number-of-words-in-file [file-name]
   (reduce + (map count (tokenized-lines (read-lines file-name)))))
-
 
 (defn extract-vocabulary [words]
   (reduce (fn [s e]
