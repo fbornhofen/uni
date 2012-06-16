@@ -1,5 +1,9 @@
 (ns similarities.core)
 
+;;
+;; Note to self: take some time to learn to use Clojure's lazy seqs in an efficient way.
+;;
+
 (use '[clojure.string :only [split]])
 (use 'clojure.set)
 (use 'clojure.java.io)
@@ -12,18 +16,11 @@
 
 (def empty-word "\"\"")
 
-(defrecord VocabularyWord [word pos-tags context-words context-tags])
-
-(defn vw-update [vw word pos-tag context-words context-tags]
-  (if (nil? vw)
-    (->VocabularyWord word
-                      (set pos-tag)
-                      context-words
-                      context-tags)
-    (->VocabularyWord word
-                      (union (:pos-tags vw) pos-tag)
-                      (doall (concat (:context-words vw) context-words))
-                      (doall (concat (:context-tags vw) context-tags)))))
+(defn make-dictionary-entry [word]
+  {:word word
+   :pos-tags (java.util.HashSet.)
+   :context-words (java.util.HashMap.)
+   :context-tags (java.util.HashMap.)})
 
 ;; ----- IO and parsing 
 
@@ -38,91 +35,72 @@
 (defn split-pos-word [pos-word]
   (split pos-word (re-pattern "/")))
 
-;; ----- Word contexts
+;; -----
 
 (defn word-context [array-of-words index win-size]
-  (doall (concat (for [i (range (- index win-size) index)]
-                   (split-pos-word (nth array-of-words i)))
-                 (for [i (range (inc index) (+ (inc index) win-size))]
-                   (split-pos-word (nth array-of-words i))))))
-
-(defn pad-words [array-of-words pad-size pad-word]
-  (doall (concat (take pad-size (repeat pad-word))
-                 array-of-words
-                 (take pad-size (repeat pad-word)))))
+  (concat (for [i (range (- index win-size) index)]
+            (split-pos-word (nth array-of-words i)))
+          (for [i (range (inc index) (+ (inc index) win-size))]
+            (split-pos-word (nth array-of-words i)))))
 
 (defn context-words-and-tags [array-of-words index word-win pos-win]
   [(map first (word-context array-of-words index word-win))
    (map second (word-context array-of-words index pos-win))])
 
-;; ----- Vocabulary extraction
+(defn pad-line [array-of-words pad-size pad-word]
+  (concat (take pad-size (repeat pad-word))
+          array-of-words
+          (take pad-size (repeat pad-word))))
 
-(defn vw-from-word-in-sentence [padded-sentence position word-win pos-win]
-  (let [pos-word (nth padded-sentence position)
-        [word tag] (split-pos-word pos-word)
-        context (context-words-and-tags padded-sentence position word-win pos-win)]
-    (->VocabularyWord word
-                      #{tag}
-                      (first context)
-                      (second context))))
+(defn lines-into-dictionary [dictionary array-of-lines word-win pos-win]
+  (let [pad (max word-win pos-win)]
+    ;; iterate over all lines. add a padding to each line.
+    (doseq [line array-of-lines]
+      (let [padded-line (pad-line line pad (str empty-word "/" empty-word))
+            indices     (for [i (range pad (+ pad (count line)))] i)]
+        ;; iterate over the valid indices within each line
+        (doseq [i indices]
+          ;; add information for i-th word in sentence to dictionary
+          (let [pos-word (split-pos-word (nth padded-line i))
+                word (first pos-word)
+                tag (second pos-word)
+                context (context-words-and-tags padded-line i word-win pos-win)
+                ctx-words (first context)
+                ctx-tags (second context)]
+            (if (nil? (.get dictionary word))
+              (.put dictionary word (make-dictionary-entry word)))
+            (let [dictionary-entry (.get dictionary word)
+                  de-pos-tags  (:pos-tags dictionary-entry)
+                  de-ctx-words (:context-words dictionary-entry)
+                  de-ctx-tags  (:context-tags dictionary-entry)]
+              (.add de-pos-tags tag) ; add current pos-tag
+              (doseq [ctx-word ctx-words]
+                (.put de-ctx-words ctx-word
+                      (if (nil? (.get de-ctx-words ctx-word))
+                        1
+                        (inc (.get de-ctx-words ctx-word)))))
+              (doseq [ctx-tag ctx-tags]
+                (.put de-ctx-tags ctx-tag
+                      (if (nil? (.get de-ctx-tags ctx-tag))
+                        1
+                        (inc (.get de-ctx-tags ctx-tag))))))))))))
 
-(defn vocabulary-words-from-sentence [array-of-words word-win pos-win]
-  (let [pad          (max word-win pos-win)
-        padded-words (doall (pad-words array-of-words pad (str empty-word "/" empty-word)))]
-    (for [i (range pad (+ pad (count array-of-words)))]
-      (vw-from-word-in-sentence padded-words i word-win pos-win))))
 
-(defn dictionary-from-vocabulary-words [array-of-vws]
-  (reduce (fn [s e]
-            (assoc s (:word e) (vw-update (s (:word e)) ; look up vw in s
-                                          (:word e)
-                                          (:pos-tags e)
-                                          (:context-words e)
-                                          (:context-tags e))))
-          {}
-          array-of-vws))
-
-(defn dictionary-from-lines [array-of-lines word-win pos-win]
-  (let [all-vws (flatten (map #(vocabulary-words-from-sentence %1 word-win pos-win) array-of-lines))]
-    (dictionary-from-vocabulary-words all-vws)))
+(defn file-into-dictionary [file-name dictionary word-win pos-win]
+  (lines-into-dictionary dictionary (tokenized-lines (read-lines file-name)) word-win pos-win))
 
 ;; public interface:
 
-(defn pretty-print-vocabulary [hashmap]
-  (doseq [word (keys hashmap)]
-    (let [vw (hashmap word)]
-      (println (str word " ->\n\t" (:pos-tags vw) "\n\t" (:context-words vw) "\n\t" (:context-tags vw))))))
-
-(defn extract-vocabulary-from-file [file-name word-win pos-win]
-  (dictionary-from-lines (tokenized-lines (read-lines file-name)) word-win pos-win))
-
 (defn extract-words-and-contexts [in-file out-file word-win pos-win]
-  (let [vocabulary (extract-vocabulary-from-file in-file word-win pos-win)]
+  (let [dictionary (java.util.HashMap.)]
+    (file-into-dictionary in-file dictionary word-win pos-win)
     (with-open [wrtr (writer out-file)]
-      (doseq [word (keys vocabulary)]
-        (let [vw (vocabulary word)]
+      (doseq [word (.keySet dictionary)]
+        (let [dict-entry (.get dictionary word)]
           (.write wrtr (str word
                             "\t"
-                            (clojure.string/join " " (:context-words vw))
+                            (clojure.string/join " " (:context-words dict-entry))
                             "\t"
-                            (clojure.string/join " " (:context-tags vw))
+                            (clojure.string/join " " (:context-tags dict-entry))
                             "\n")))))))
 
-
-;; ----- Tests
-
-(def sample-sentence ["The/at" "Fulton/np-tl" "County/nn-tl" "Grand/jj-tl" "Jury/nn-tl" "said/vbd" "Friday/nr" "an/at" "investigation/nn" "of/in" "Atlanta's/np$" "recent/jj" "primary/nn" "election/nn" "produced/vbd" "``/``" "no/at" "evidence/nn" "''/''" "that/cs" "any/dti" "irregularities/nns" "took/vbd" "place/nn" "./."])
-
-(deftest test-extract-vocabulary-from-sentence
-  (let [vw (dictionary-from-vocabulary-words (vocabulary-words-from-sentence sample-sentence 4 1))]
-    (is (= #{"np-tl"}      (:pos-tags (vw "Fulton"))))
-    (is (= '("at" "nn-tl") (:context-tags (vw "Fulton"))))))
-
-(deftest test-dictionary-from-vocabulary-words
-  (let [vw1 (->VocabularyWord "foo" #{"verb"} '("baz" "bar") '("noun" "prep"))
-        vw2 (->VocabularyWord "foo" #{"noun"} '("example" "bar" "the") '("noun" "article"))
-        dict (dictionary-from-vocabulary-words [vw1 vw2])
-        foo (dict "foo")]
-    (is (= #{"verb" "noun"} (:pos-tags foo)))
-    (is (= '("baz" "bar" "example" "bar" "the") (:context-words foo)))
-    (is (= '("noun" "prep" "noun" "article") (:context-tags foo)))))
