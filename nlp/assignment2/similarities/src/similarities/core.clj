@@ -94,20 +94,19 @@
       (println (str word " ->\n\t" (:pos-tags vw) "\n\t" (:context-words vw) "\n\t" (:context-tags vw))))))
 
 (defn extract-vocabulary-from-file [file-name word-win pos-win]
-  (doall (dictionary-from-lines (tokenized-lines (read-lines file-name)) word-win pos-win)))
+  (dictionary-from-lines (tokenized-lines (read-lines file-name)) word-win pos-win))
 
 (defn extract-words-and-contexts [in-file out-file word-win pos-win]
   (let [vocabulary (extract-vocabulary-from-file in-file word-win pos-win)]
-    (println (str "writing " (count vocabulary) " lines to " out-file))
     (with-open [wrtr (writer out-file)]
-      (doseq [vw vocabulary]
-        (println (:word vw))
-        (.write wrtr (str (:word vw)
-                          "\t"
-                          (clojure.string/join " " (:context-words vw))
-                          "\t"
-                          (clojure.string/join " " (:context-tags vw))
-                          "\n"))))))
+      (doseq [word (keys vocabulary)]
+        (let [vw (vocabulary word)]
+          (.write wrtr (str word
+                            "\t"
+                            (clojure.string/join " " (:context-words vw))
+                            "\t"
+                            (clojure.string/join " " (:context-tags vw))
+                            "\n")))))))
 
 
 ;; ----- Tests
