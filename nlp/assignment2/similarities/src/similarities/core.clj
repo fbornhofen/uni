@@ -85,6 +85,13 @@
   (let [all-vws (flatten (map #(vocabulary-words-from-sentence %1 word-win pos-win) array-of-lines))]
     (dictionary-from-vocabulary-words all-vws)))
 
+;; public interface:
+
+(defn pretty-print-vocabulary [hashmap]
+  (doseq [word (keys hashmap)]
+    (let [vw (hashmap word)]
+      (println (str word " ->\n\t" (:pos-tags vw) "\n\t" (:context-words vw) "\n\t" (:context-tags vw))))))
+
 (defn extract-vocabulary-from-file [file-name word-win pos-win]
   (dictionary-from-lines (tokenized-lines (read-lines file-name)) word-win pos-win))
 
