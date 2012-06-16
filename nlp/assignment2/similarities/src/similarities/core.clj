@@ -17,12 +17,12 @@
   (if (nil? vw)
     (->VocabularyWord word
                       (set pos-tag)
-                      (set context-words)
-                      (set context-tags))
+                      context-words
+                      context-tags)
     (->VocabularyWord word
                       (union (:pos-tags vw) pos-tag)
-                      (union (:context-words vw) context-words)
-                      (union (:context-tags vw) context-tags))))
+                      (doall (concat (:context-words vw) context-words))
+                      (doall (concat (:context-tags vw) context-tags)))))
 
 ;; ----- IO and parsing 
 
@@ -62,8 +62,8 @@
         context (context-words-and-tags padded-sentence position word-win pos-win)]
     (->VocabularyWord word
                       #{tag}
-                      #{(first context)}
-                      #{(second context)})))
+                      (first context)
+                      (second context))))
 
 (defn vocabulary-words-from-sentence [array-of-words word-win pos-win]
   (let [pad          (max word-win pos-win)
@@ -76,10 +76,8 @@
             (assoc s (:word e) (vw-update (s (:word e)) ; look up vw in s
                                           (:word e)
                                           (:pos-tags e)
-                                        (difference ; removing empty-word slows down extract-voc... by ~10% 
-                                         (:context-words e) #{empty-word})
-                                        (difference
-                                         (:context-tags e) #{empty-word}))))
+                                          (:context-words e)
+                                          (:context-tags e))))
           {}
           array-of-vws))
 
@@ -97,21 +95,24 @@
 (defn extract-vocabulary-from-file [file-name word-win pos-win]
   (dictionary-from-lines (tokenized-lines (read-lines file-name)) word-win pos-win))
 
+(defn extract-words-and-contexts [in-file out-file]
+  )
+
 
 ;; ----- Tests
 
 (def sample-sentence ["The/at" "Fulton/np-tl" "County/nn-tl" "Grand/jj-tl" "Jury/nn-tl" "said/vbd" "Friday/nr" "an/at" "investigation/nn" "of/in" "Atlanta's/np$" "recent/jj" "primary/nn" "election/nn" "produced/vbd" "``/``" "no/at" "evidence/nn" "''/''" "that/cs" "any/dti" "irregularities/nns" "took/vbd" "place/nn" "./."])
 
 (deftest test-extract-vocabulary-from-sentence
-  (let [vw (vocabulary-from-sentence sample-sentence 4 1)]
+  (let [vw (dictionary-from-vocabulary-words (vocabulary-words-from-sentence sample-sentence 4 1))]
     (is (= #{"np-tl"}      (:pos-tags (vw "Fulton"))))
-    (is (= #{"at" "nn-tl"} (:context-tags (vw "Fulton"))))))
+    (is (= '("at" "nn-tl") (:context-tags (vw "Fulton"))))))
 
 (deftest test-dictionary-from-vocabulary-words
-  (let [vw1 (->VocabularyWord "foo" #{"verb"} #{"baz" "bar"} #{"noun" "prep"})
-        vw2 (->VocabularyWord "foo" #{"noun"} #{"example" "bar" "the"} #{"noun" "article"})
+  (let [vw1 (->VocabularyWord "foo" #{"verb"} '("baz" "bar") '("noun" "prep"))
+        vw2 (->VocabularyWord "foo" #{"noun"} '("example" "bar" "the") '("noun" "article"))
         dict (dictionary-from-vocabulary-words [vw1 vw2])
         foo (dict "foo")]
     (is (= #{"verb" "noun"} (:pos-tags foo)))
-    (is (= #{"baz" "bar" "example" "the"} (:context-words foo)))
-    (is (= #{"noun" "prep" "article"} (:context-tags foo)))))
+    (is (= '("baz" "bar" "example" "bar" "the") (:context-words foo)))
+    (is (= '("noun" "prep" "noun" "article") (:context-tags foo)))))
