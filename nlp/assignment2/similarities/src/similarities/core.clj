@@ -62,8 +62,8 @@
         context (context-words-and-tags padded-sentence position word-win pos-win)]
     (->VocabularyWord word
                       #{tag}
-                      (set (first context))
-                      (set (second context)))))
+                      #{(first context)}
+                      #{(second context)})))
 
 (defn vocabulary-words-from-sentence [array-of-words word-win pos-win]
   (let [pad          (max word-win pos-win)
@@ -76,8 +76,10 @@
             (assoc s (:word e) (vw-update (s (:word e)) ; look up vw in s
                                           (:word e)
                                           (:pos-tags e)
-                                          (difference (:context-words e) #{empty-word})
-                                          (difference (:context-tags e) #{empty-word}))))
+                                        (difference ; removing empty-word slows down extract-voc... by ~10% 
+                                         (:context-words e) #{empty-word})
+                                        (difference
+                                         (:context-tags e) #{empty-word}))))
           {}
           array-of-vws))
 
