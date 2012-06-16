@@ -73,7 +73,7 @@
 
 (defn dictionary-from-vocabulary-words [array-of-vws]
   (reduce (fn [s e]
-            (assoc s (:word e) (vw-update s
+            (assoc s (:word e) (vw-update (s (:word e)) ; look up vw in s
                                           (:word e)
                                           (:pos-tags e)
                                           (difference (:context-words e) #{empty-word})
@@ -104,3 +104,12 @@
   (let [vw (vocabulary-from-sentence sample-sentence 4 1)]
     (is (= #{"np-tl"}      (:pos-tags (vw "Fulton"))))
     (is (= #{"at" "nn-tl"} (:context-tags (vw "Fulton"))))))
+
+(deftest test-dictionary-from-vocabulary-words
+  (let [vw1 (->VocabularyWord "foo" #{"verb"} #{"baz" "bar"} #{"noun" "prep"})
+        vw2 (->VocabularyWord "foo" #{"noun"} #{"example" "bar" "the"} #{"noun" "article"})
+        dict (dictionary-from-vocabulary-words [vw1 vw2])
+        foo (dict "foo")]
+    (is (= #{"verb" "noun"} (:pos-tags foo)))
+    (is (= #{"baz" "bar" "example" "the"} (:context-words foo)))
+    (is (= #{"noun" "prep" "article"} (:context-tags foo)))))
