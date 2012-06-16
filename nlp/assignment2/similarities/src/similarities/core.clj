@@ -97,6 +97,8 @@
     (with-open [wrtr (writer out-file)]
       (doseq [word (.keySet dictionary)]
         (let [dict-entry (.get dictionary word)]
+          ;; context-tags and pos-tags will be printed as WORD=NUM
+          ;; NUM being the number of occurrences in all contexts of WORD
           (.write wrtr (str word
                             "\t"
                             (clojure.string/join " " (:context-words dict-entry))
