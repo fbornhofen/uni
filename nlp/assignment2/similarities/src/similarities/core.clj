@@ -2,22 +2,27 @@
 
 (use '[clojure.string :only [split]])
 (use 'clojure.set)
+(use 'clojure.test)
 
 (import 'java.io.BufferedReader)
 (import 'java.io.FileReader)
 
-(defrecord VocabularyWord [word positions pos-tags context-words])
+;; ----- Data structures
 
-(defn vw-update [vw word position pos-tag context-words]
+(defrecord VocabularyWord [word pos-tags context-words context-tags])
+
+(defn vw-update [vw word pos-tag context-words context-tags]
   (if (nil? vw)
     (->VocabularyWord word
-                      [position]
-                      (hash-set pos-tag)
-                      (set context-words))
+                      (set pos-tag)
+                      (set context-words)
+                      (set context-tags))
     (->VocabularyWord word
-                      (conj (:positions vw) position)
-                      (conj (:pos-tags vw) pos-tag)
-                      (union (:context-words vw) context-words))))
+                      (union (:pos-tags vw) pos-tag)
+                      (union (:context-words vw) context-words)
+                      (union (:context-tags vw) context-tags))))
+
+;; ----- IO and parsing 
 
 (defn read-lines [file-name]
   (with-open [rdr (BufferedReader. (FileReader. file-name))]
@@ -27,20 +32,69 @@
   (map (fn [line] (split line (re-pattern "\\s")))
        array-of-lines))
 
+(defn split-pos-word [pos-word]
+  (split pos-word (re-pattern "/")))
+
 (defn all-words [array-of-lines]
   (flatten (tokenized-lines array-of-lines)))
-  
-(defn number-of-words-in-file [file-name]
-  (reduce + (map count (tokenized-lines (read-lines file-name)))))
 
-(defn extract-vocabulary [words]
-  (reduce (fn [s e]
-            (let [word-and-tag (split e (re-pattern "/"))
-                  word (first  word-and-tag)
-                  tag  (second word-and-tag)]
-                                        ; (s word) will yield nil if not present
-                                        ; -> no need to check
-              (assoc s word (vw-update (s word) word 0 tag []))))
-          {}
-          words))
+;; ----- Word contexts
 
+(defn word-context [array-of-words index win-size]
+  (doall (concat (for [i (range (- index win-size) index)]
+                   (split-pos-word (nth array-of-words i)))
+                 (for [i (range (inc index) (+ (inc index) win-size))]
+                   (split-pos-word (nth array-of-words i))))))
+
+(defn pad-words [array-of-words pad-size pad-word]
+  (doall (concat (take pad-size (repeat pad-word))
+                 array-of-words
+                 (take pad-size (repeat pad-word)))))
+
+(defn context-words-and-tags [array-of-words index word-win pos-win]
+  [(map first (word-context array-of-words index word-win))
+   (map second (word-context array-of-words index pos-win))])
+
+;; ----- Vocabulary extraction
+
+(defn vw-from-word-in-sentence [padded-sentence position word-win pos-win]
+  (let [pos-word (nth padded-sentence position)
+        [word tag] (split-pos-word pos-word)
+        context (context-words-and-tags padded-sentence position word-win pos-win)]
+    (->VocabularyWord word
+                      #{tag}
+                      (set (first context))
+                      (set (second context)))))
+
+(defn vocabulary-from-sentence [array-of-words word-win pos-win]
+  (let [pad          (max word-win pos-win)
+        empty-word   "\"\""
+        padded-words (doall (pad-words array-of-words pad (str empty-word "/" empty-word)))
+        vws          (for [i (range pad (+ pad (count array-of-words)))]
+                       (vw-from-word-in-sentence padded-words i word-win pos-win))]
+    ;; TODO extract method from below reduce pass and do it over the complete corpus
+    (reduce (fn [s e]
+              (assoc s (:word e) (vw-update s
+                                            (:word e)
+                                            (:pos-tags e)
+                                            (difference (:context-words e) #{empty-word})
+                                            (difference (:context-tags e) #{empty-word}))))
+            {}
+            vws)))
+
+
+(defn extract-vocabulary-from-file [file-name]
+  (extract-vocabulary (all-words (read-lines file-name))))
+
+
+
+
+
+;; ----- Tests
+
+(def sample-sentence ["The/at" "Fulton/np-tl" "County/nn-tl" "Grand/jj-tl" "Jury/nn-tl" "said/vbd" "Friday/nr" "an/at" "investigation/nn" "of/in" "Atlanta's/np$" "recent/jj" "primary/nn" "election/nn" "produced/vbd" "``/``" "no/at" "evidence/nn" "''/''" "that/cs" "any/dti" "irregularities/nns" "took/vbd" "place/nn" "./."])
+
+(deftest test-extract-vocabulary-from-sentence
+  (let [vw (vocabulary-from-sentence sample-sentence 4 1)]
+    (is (= #{"np-tl"}      (:pos-tags (vw "Fulton"))))
+    (is (= #{"at" "nn-tl"} (:context-tags (vw "Fulton"))))))
