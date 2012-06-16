@@ -9,6 +9,8 @@
 
 ;; ----- Data structures
 
+(def empty-word "\"\"")
+
 (defrecord VocabularyWord [word pos-tags context-words context-tags])
 
 (defn vw-update [vw word pos-tag context-words context-tags]
@@ -34,9 +36,6 @@
 
 (defn split-pos-word [pos-word]
   (split pos-word (re-pattern "/")))
-
-(defn all-words [array-of-lines]
-  (flatten (tokenized-lines array-of-lines)))
 
 ;; ----- Word contexts
 
@@ -66,28 +65,28 @@
                       (set (first context))
                       (set (second context)))))
 
-(defn vocabulary-from-sentence [array-of-words word-win pos-win]
+(defn vocabulary-words-from-sentence [array-of-words word-win pos-win]
   (let [pad          (max word-win pos-win)
-        empty-word   "\"\""
-        padded-words (doall (pad-words array-of-words pad (str empty-word "/" empty-word)))
-        vws          (for [i (range pad (+ pad (count array-of-words)))]
-                       (vw-from-word-in-sentence padded-words i word-win pos-win))]
-    ;; TODO extract method from below reduce pass and do it over the complete corpus
-    (reduce (fn [s e]
-              (assoc s (:word e) (vw-update s
-                                            (:word e)
-                                            (:pos-tags e)
-                                            (difference (:context-words e) #{empty-word})
-                                            (difference (:context-tags e) #{empty-word}))))
-            {}
-            vws)))
+        padded-words (doall (pad-words array-of-words pad (str empty-word "/" empty-word)))]
+    (for [i (range pad (+ pad (count array-of-words)))]
+      (vw-from-word-in-sentence padded-words i word-win pos-win))))
 
+(defn dictionary-from-vocabulary-words [array-of-vws]
+  (reduce (fn [s e]
+            (assoc s (:word e) (vw-update s
+                                          (:word e)
+                                          (:pos-tags e)
+                                          (difference (:context-words e) #{empty-word})
+                                          (difference (:context-tags e) #{empty-word}))))
+          {}
+          array-of-vws))
 
-(defn extract-vocabulary-from-file [file-name]
-  (extract-vocabulary (all-words (read-lines file-name))))
+(defn dictionary-from-lines [array-of-lines word-win pos-win]
+  (let [all-vws (flatten (map #(vocabulary-words-from-sentence %1 word-win pos-win) array-of-lines))]
+    (dictionary-from-vocabulary-words all-vws)))
 
-
-
+(defn extract-vocabulary-from-file [file-name word-win pos-win]
+  (dictionary-from-lines (tokenized-lines (read-lines file-name)) word-win pos-win))
 
 
 ;; ----- Tests
