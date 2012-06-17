@@ -121,22 +121,22 @@
         mag-b (Math/sqrt (reduce + (map #(* % %) vec-b)))]
     (/ a-dot-b (* mag-a mag-b))))
 
-(defn create-context-vector [dict-entry dict pos-set dict-order pos-order]
+(defn create-context-vector [dict-entry dict dict-order pos-order]
   (let [ctx-words (:context-words dict-entry)
         ctx-tags (:context-tags dict-entry)]
     (vec (concat (map #(get ctx-words % 0) dict-order)   ; number of occurrences of each dict word in w, or 0
                  (map #(get ctx-tags % 0) pos-order))))) ; same for POS tags
 
-(defn compare-words [dict-entry1 dict-entry2 dict pos-set dict-order pos-order]
-  (let [vec1 (create-context-vector dict-entry1 dict pos-set dict-order pos-order)
-        vec2 (create-context-vector dict-entry2 dict pos-set dict-order pos-order)
+(defn compare-words [dict-entry1 dict-entry2 dict dict-order pos-order]
+  (let [vec1 (create-context-vector dict-entry1 dict dict-order pos-order)
+        vec2 (create-context-vector dict-entry2 dict dict-order pos-order)
         similarity (cosine-similarity vec1 vec2)]
     (->SimilarityResult dict-entry1 dict-entry2 similarity)))
 
 (defn sorted-keys [dictionary]
   (sort (.keySet dictionary)))
 
-;; public interface:
+;; ----- context extraction, IO:
 
 (defn extract-words-and-contexts [in-file word-win pos-win]
   (let [dictionary (java.util.HashMap.)
@@ -166,10 +166,55 @@
       (.write wrtr (str x "\n"))))
   xs)
 
-(defn get-n-most-similar-words [dictionary n]
+;; ----- finding most similar words
+
+(defn update-most-similar [sorted-similarity-results item]
+  (let [f (first sorted-similarity-results)
+        r (rest sorted-similarity-results)]
+    (if (> (:similarity item) (:similarity f))
+      (sort #(< (:similarity %1) (:similarity %2)) (cons item r))
+      sorted-similarity-results)))
+
+(defn find-similar-words-updating-results
+  [entry dictionary dict-order pos-order sorted-similarity-results]
+  (let [num-words (count (.keySet dictionary))]
+    (loop [i 0
+           top-words sorted-similarity-results]
+      (if (<= num-words i)
+        top-words
+        (let [entry2 (.get dictionary (nth dict-order i))]
+          (if (= (:word entry) (:word entry2))
+            (recur (inc i) top-words)
+            (recur (inc i) (update-most-similar
+                            top-words
+                            (compare-words entry
+                                           entry2 
+                                           dictionary
+                                           dict-order
+                                           pos-order)))))))))
+
+
+(defn get-n-most-similar-words [dictionary pos-set n]
   ;; FIXME implement
-;;  (let [[dictionary pos-set] (extract-words-and-contexts 
-  )
+  (let [num-words (count (.keySet dictionary))
+        dict-order (sort (.keySet dictionary))
+        pos-order (sort pos-set)]
+    (loop [i 0
+           top-n-words (take n (repeat (->SimilarityResult nil nil 0)))]
+      (if (<= num-words i)
+        top-n-words
+        (let [entry (.get dictionary (nth dict-order i))]
+          (if (<= num-words i)
+            top-n-words
+            (recur (inc i)
+                   (find-similar-words-updating-results entry
+                                                        dictionary
+                                                        dict-order
+                                                        pos-order
+                                                        top-n-words))))))))
+;; FIXME refactor the above mess into something using a carthesian product
+
+;; ----- main
 
 (defn -main [& args]
   (if (> 5 (count args))
