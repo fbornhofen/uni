@@ -183,7 +183,9 @@
       (if (<= num-words i)
         top-words
         (let [entry2 (.get dictionary (nth dict-order i))]
-          (if (= (:word entry) (:word entry2))
+          (if (or (= (:word entry) (:word entry2))   ; sim(entry,entry) = 1
+                  (some #(and (= (:entry1 %) entry2) ; similarity symmetry
+                              (= (:entry2 %) entry)) top-words))
             (recur (inc i) top-words)
             (recur (inc i) (update-most-similar
                             top-words
@@ -195,23 +197,23 @@
 
 
 (defn get-n-most-similar-words [dictionary pos-set n]
-  ;; FIXME implement
-  (let [num-words (count (.keySet dictionary))
-        dict-order (sort (.keySet dictionary))
-        pos-order (sort pos-set)]
-    (loop [i 0
-           top-n-words (take n (repeat (->SimilarityResult nil nil 0)))]
-      (if (<= num-words i)
-        top-n-words
-        (let [entry (.get dictionary (nth dict-order i))]
-          (if (<= num-words i)
-            top-n-words
-            (recur (inc i)
-                   (find-similar-words-updating-results entry
-                                                        dictionary
-                                                        dict-order
-                                                        pos-order
-                                                        top-n-words))))))))
+  (reverse
+   (let [num-words (count (.keySet dictionary))
+         dict-order (sort (.keySet dictionary))
+         pos-order (sort pos-set)]
+     (loop [i 0
+            top-n-words (take n (repeat (->SimilarityResult nil nil 0)))]
+       (if (<= num-words i)
+         top-n-words
+         (let [entry (.get dictionary (nth dict-order i))]
+           (if (<= num-words i)
+             top-n-words
+             (recur (inc i)
+                    (find-similar-words-updating-results entry
+                                                         dictionary
+                                                         dict-order
+                                                         pos-order
+                                                         top-n-words)))))))))
 ;; FIXME refactor the above mess into something using a carthesian product
 
 ;; ----- main
