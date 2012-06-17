@@ -226,17 +226,20 @@
 ;; ----- main
 
 (defn -main [& args]
-  (if (> 5 (count args))
-    (do (println "args: <INPUT-FILE> <OUTPUT-FILE> "
-                 "<POS-TAG-OUTPUT-FILE> <WORD-WIN> <POS-WIN>")
+  (if (> 7 (count args))
+    (do (println "args: <INPUT-FILE> <CONTEXTS-FILE> <POS-TAG-OUTPUT-FILE> "
+                 "<SIMILARITIES-OUTPUT-FILE> <WORD-WIN> <POS-WIN> <N-SIMILAR-WORDS>")
         (System/exit -1))
     (let [[dictionary pos-set] (extract-words-and-contexts
                                 (nth args 0)
-                                (Integer/parseInt (nth args 3))
-                                (Integer/parseInt (nth args 4)))]
+                                (Integer/parseInt (nth args 4))
+                                (Integer/parseInt (nth args 5)))]
       (dump-dict dictionary (nth args 1))
       (dump-set pos-set (nth args 2))
       (println (str "extracted "
                     (count (.keySet dictionary))
                     " entries and "
-                    (count pos-set) " POS-tags")))))
+                    (count pos-set) " POS-tags"))
+      (dump-similarity-results (get-n-most-similar-words dictionary
+                                                         pos-set
+                                                         (Integer/parseInt (nth args 6)))))))
