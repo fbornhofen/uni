@@ -31,6 +31,8 @@
   (remove-nonwords (:context-words entry))
   (remove-nonwords (:context-tags entry)))
 
+(defrecord SimilarityResult [entry1 entry2 similarity])
+
 ;; ----- IO and parsing 
 
 (defn read-lines [file-name]
@@ -125,37 +127,49 @@
     (vec (concat (map #(get ctx-words % 0) dict-order)   ; number of occurrences of each dict word in w, or 0
                  (map #(get ctx-tags % 0) pos-order))))) ; same for POS tags
 
+(defn compare-words [dict-entry1 dict-entry2 dict pos-set dict-order pos-order]
+  (let [vec1 (create-context-vector dict-entry1 dict pos-set dict-order pos-order)
+        vec2 (create-context-vector dict-entry2 dict pos-set dict-order pos-order)
+        similarity (cosine-similarity vec1 vec2)]
+    (->SimilarityResult dict-entry1 dict-entry2 similarity)))
+
 (defn sorted-keys [dictionary]
   (sort (.keySet dictionary)))
 
 ;; public interface:
 
-(defn extract-words-and-contexts [in-file out-file word-win pos-win]
+(defn extract-words-and-contexts [in-file word-win pos-win]
   (let [dictionary (java.util.HashMap.)
         pos-set (java.util.HashSet.)]
     (file-into-dictionary in-file dictionary pos-set word-win pos-win)
-    (with-open [wrtr (writer out-file)]
-      (doseq [word (.keySet dictionary)]
-        (let [dict-entry (.get dictionary word)]
-          ;; context-tags and pos-tags will be printed as WORD=NUM
-          ;; NUM being the number of occurrences in all contexts of WORD
-          ;; FIXME: formatting as in spec
-          (.write wrtr (str word
-                            "\t"
-                            (clojure.string/join " " (:pos-tags dict-entry))
-                            "\t"
-                            (clojure.string/join " " (:context-words dict-entry))
-                            "\t"
-                            (clojure.string/join " " (:context-tags dict-entry))
-                            "\n")))))
     [dictionary pos-set]))
 
+(defn dump-dict [dictionary file-name]
+  (with-open [wrtr (writer file-name)]
+    (doseq [word (.keySet dictionary)]
+      (let [dict-entry (.get dictionary word)]
+        ;; context-tags and pos-tags will be printed as WORD=NUM
+        ;; NUM being the number of occurrences in all contexts of WORD
+        ;; FIXME: formatting as in spec
+        (.write wrtr (str word
+                          "\t"
+                          (clojure.string/join " " (:pos-tags dict-entry))
+                          "\t"
+                          (clojure.string/join " " (:context-words dict-entry))
+                          "\t"
+                          (clojure.string/join " " (:context-tags dict-entry))
+                          "\n"))))))
+    
 (defn dump-set [xs file-name]
   (with-open [wrtr (writer file-name)]
     (doseq [x xs]
       (.write wrtr (str x "\n"))))
   xs)
-    
+
+(defn get-n-most-similar-words [dictionary n]
+  ;; FIXME implement
+;;  (let [[dictionary pos-set] (extract-words-and-contexts 
+  )
 
 (defn -main [& args]
   (if (> 5 (count args))
@@ -164,9 +178,9 @@
         (System/exit -1))
     (let [[dictionary pos-set] (extract-words-and-contexts
                                 (nth args 0)
-                                (nth args 1)
                                 (Integer/parseInt (nth args 3))
                                 (Integer/parseInt (nth args 4)))]
+      (dump-dict dictionary (nth args 1))
       (dump-set pos-set (nth args 2))
       (println (str "extracted "
                     (count (.keySet dictionary))
