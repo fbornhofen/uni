@@ -120,8 +120,13 @@
     (/ a-dot-b (* mag-a mag-b))))
 
 (defn create-context-vector [dict-entry dict pos-set dict-order pos-order]
-  ;; FIXME: create [M+K] vector with given sorting
-  )
+  (let [ctx-words (:context-words dict-entry)
+        ctx-tags (:context-tags dict-entry)]
+    (concat (map #(get ctx-words % 0) dict-order)  ; number of occurrences of each dict word in w, or 0
+            (map #(get ctx-tags % 0) pos-order)))) ; same for POS tags
+
+(defn sorted-keys [dictionary]
+  (sort (.keySet dictionary)))
 
 ;; public interface:
 
