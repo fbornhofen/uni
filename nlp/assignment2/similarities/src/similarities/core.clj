@@ -111,6 +111,14 @@
 
 ;; ----- similarity 
 
+(defn cosine-similarity [vec-a vec-b]
+  (when (not= (count vec-a) (count vec-b))
+    (throw (Throwable. "vectors must be of same length")))
+  (let [a-dot-b (reduce + (map #(* (vec-a %) (vec-b %)) (range (count vec-a))))
+        mag-a (Math/sqrt (reduce + (map #(* % %) vec-a)))
+        mag-b (Math/sqrt (reduce + (map #(* % %) vec-b)))]
+    (/ a-dot-b (* mag-a mag-b))))
+
 (defn create-context-vector [dict-entry dict pos-set dict-order pos-order]
   ;; FIXME: create [M+K] vector with given sorting
   )
