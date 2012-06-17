@@ -238,7 +238,7 @@
       (println "extracted "
                (count (.keySet dictionary))
                " entries and "
-               (count pos-set) " POS-tags"))
+               (count pos-set) " POS-tags")
       (dump-similarity-results (get-n-most-similar-words dictionary
                                                          pos-set
-                                                         (Integer/parseInt (nth args 6))))))
+                                                         (Integer/parseInt (nth args 6)))))))
