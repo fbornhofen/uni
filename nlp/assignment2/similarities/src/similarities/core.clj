@@ -166,6 +166,13 @@
       (.write wrtr (str x "\n"))))
   xs)
 
+(defn dump-similarity-results [srs file-name]
+  (with-open [wrtr (writer file-name)]
+    (doseq [r srs]
+      (.write wrtr (str (:word (:entry1 r)) " "
+                        (:word (:entry2 r)) " " 
+                        (:similarity r) "\n")))))
+
 ;; ----- finding most similar words
 
 (defn update-most-similar [sorted-similarity-results item]
