@@ -210,6 +210,7 @@
          pos-order (sort pos-set)]
      (loop [i 0
             top-n-words (take n (repeat (->SimilarityResult nil nil 0)))]
+       (when (zero? (mod i 10)) (println "compared " i " words"))
        (if (<= num-words i)
          top-n-words
          (let [entry (.get dictionary (nth dict-order i))]
@@ -234,10 +235,10 @@
                                 (Integer/parseInt (nth args 5)))]
       (dump-dict dictionary (nth args 1))
       (dump-set pos-set (nth args 2))
-      (println (str "extracted "
-                    (count (.keySet dictionary))
-                    " entries and "
-                    (count pos-set) " POS-tags"))
+      (println "extracted "
+               (count (.keySet dictionary))
+               " entries and "
+               (count pos-set) " POS-tags"))
       (dump-similarity-results (get-n-most-similar-words dictionary
                                                          pos-set
-                                                         (Integer/parseInt (nth args 6)))))))
+                                                         (Integer/parseInt (nth args 6))))))
