@@ -61,7 +61,7 @@
           array-of-words
           (take pad-size (repeat pad-word))))
 
-(defn lines-into-dictionary [dictionary array-of-lines word-win pos-win]
+(defn lines-into-dictionary [dictionary pos-set array-of-lines word-win pos-win]
   (let [pad (max word-win pos-win)]
     ;; iterate over all lines. add a padding to each line.
     (doseq [line array-of-lines]
@@ -82,7 +82,8 @@
                   de-pos-tags  (:pos-tags dictionary-entry)
                   de-ctx-words (:context-words dictionary-entry)
                   de-ctx-tags  (:context-tags dictionary-entry)]
-              (.add de-pos-tags tag) ; add current pos-tag
+              (.add de-pos-tags tag) ; add current pos-tag to entry ...
+              (.add pos-set tag) ; ... and to the set of all pos-tags
               (doseq [ctx-word ctx-words]
                 (.put de-ctx-words ctx-word
                       (if (nil? (.get de-ctx-words ctx-word))
@@ -94,18 +95,22 @@
                         1
                         (inc (.get de-ctx-tags ctx-tag)))))))))))
   (remove-nonwords dictionary)
+  (remove-nonwords pos-set)
   (doseq [key (.keySet dictionary)]
     (clean-dictionary-entry (.get dictionary key))))
 
 
-(defn file-into-dictionary [file-name dictionary word-win pos-win]
-  (lines-into-dictionary dictionary (tokenized-lines (read-lines file-name)) word-win pos-win))
+(defn file-into-dictionary [file-name dictionary pos-set word-win pos-win]
+  (lines-into-dictionary dictionary pos-set
+                         (tokenized-lines (read-lines file-name))
+                         word-win pos-win))
 
 ;; public interface:
 
 (defn extract-words-and-contexts [in-file out-file word-win pos-win]
-  (let [dictionary (java.util.HashMap.)]
-    (file-into-dictionary in-file dictionary word-win pos-win)
+  (let [dictionary (java.util.HashMap.)
+        pos-set (java.util.HashSet.)]
+    (file-into-dictionary in-file dictionary pos-set word-win pos-win)
     (with-open [wrtr (writer out-file)]
       (doseq [word (.keySet dictionary)]
         (let [dict-entry (.get dictionary word)]
@@ -117,17 +122,13 @@
                             "\t"
                             (clojure.string/join " " (:context-tags dict-entry))
                             "\n")))))
-    dictionary))
+    [dictionary pos-set]))
 
-(defn dump-pos-tags [dictionary pos-tag-file]
-  (let [pos-set (java.util.HashSet.)]
-    (doseq [word (.keySet dictionary)]
-      (let [dict-entry (.get dictionary word)]
-        (.addAll pos-set (:pos-tags dict-entry))))
-    (with-open [wrtr (writer pos-tag-file)]
-      (doseq [tag pos-set]
-        (.write wrtr (str tag "\n"))))
-    pos-set))
+(defn dump-set [xs file-name]
+  (with-open [wrtr (writer file-name)]
+    (doseq [x xs]
+      (.write wrtr (str x "\n"))))
+  xs)
     
 
 (defn -main [& args]
@@ -135,11 +136,12 @@
     (do (println "args: <INPUT-FILE> <OUTPUT-FILE> "
                  "<POS-TAG-OUTPUT-FILE> <WORD-WIN> <POS-WIN>")
         (System/exit -1))
-    (let [dictionary (extract-words-and-contexts (nth args 0)
-                                                 (nth args 1)
-                                                 (Integer/parseInt (nth args 3))
-                                                 (Integer/parseInt (nth args 4)))
-          pos-set (dump-pos-tags dictionary (nth args 2))]
+    (let [[dictionary pos-set] (extract-words-and-contexts
+                                (nth args 0)
+                                (nth args 1)
+                                (Integer/parseInt (nth args 3))
+                                (Integer/parseInt (nth args 4)))]
+      (dump-set pos-set (nth args 2))
       (println (str "extracted "
                     (count (.keySet dictionary))
                     " entries and "
