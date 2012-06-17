@@ -18,7 +18,7 @@
 
 (defn make-dictionary-entry [word]
   {:word word
-   :pos-tags (java.util.HashSet.)
+   :pos-tags (java.util.HashMap.)
    :context-words (java.util.HashMap.)
    :context-tags (java.util.HashMap.)})
 
@@ -82,7 +82,11 @@
                   de-pos-tags  (:pos-tags dictionary-entry)
                   de-ctx-words (:context-words dictionary-entry)
                   de-ctx-tags  (:context-tags dictionary-entry)]
-              (.add de-pos-tags tag) ; add current pos-tag to entry ...
+              ; add current pos-tag to entry ...
+              (.put de-pos-tags tag
+                    (if (nil? (.get de-pos-tags tag))
+                      1
+                      (inc (.get de-pos-tags tag))))
               (.add pos-set tag) ; ... and to the set of all pos-tags
               (doseq [ctx-word ctx-words]
                 (.put de-ctx-words ctx-word
@@ -105,6 +109,12 @@
                          (tokenized-lines (read-lines file-name))
                          word-win pos-win))
 
+;; ----- similarity 
+
+(defn create-context-vector [dict-entry dict pos-set dict-order pos-order]
+  ;; FIXME: create [M+K] vector with given sorting
+  )
+
 ;; public interface:
 
 (defn extract-words-and-contexts [in-file out-file word-win pos-win]
@@ -116,7 +126,10 @@
         (let [dict-entry (.get dictionary word)]
           ;; context-tags and pos-tags will be printed as WORD=NUM
           ;; NUM being the number of occurrences in all contexts of WORD
+          ;; FIXME: formatting as in spec
           (.write wrtr (str word
+                            "\t"
+                            (clojure.string/join " " (:pos-tags dict-entry))
                             "\t"
                             (clojure.string/join " " (:context-words dict-entry))
                             "\t"
