@@ -22,6 +22,15 @@
    :context-words (java.util.HashMap.)
    :context-tags (java.util.HashMap.)})
 
+(defn clean-dictionary-entry [entry]
+  (let [remove-nonwords
+        (fn [j-hash]
+          (doseq [nonword ["" empty-word "``" "''" "." "," "?" "!" "(" ")"]]
+            (.remove j-hash nonword)))]
+    (remove-nonwords (:pos-tags entry))
+    (remove-nonwords (:context-words entry))
+    (remove-nonwords (:context-tags entry))))
+
 ;; ----- IO and parsing 
 
 (defn read-lines [file-name]
@@ -83,7 +92,9 @@
                 (.put de-ctx-tags ctx-tag
                       (if (nil? (.get de-ctx-tags ctx-tag))
                         1
-                        (inc (.get de-ctx-tags ctx-tag))))))))))))
+                        (inc (.get de-ctx-tags ctx-tag)))))))))))
+  (doseq [key (.keySet dictionary)]
+    (clean-dictionary-entry (.get dictionary key))))
 
 
 (defn file-into-dictionary [file-name dictionary word-win pos-win]
