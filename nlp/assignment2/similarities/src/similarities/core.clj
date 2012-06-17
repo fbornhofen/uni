@@ -20,7 +20,8 @@
   {:word word
    :pos-tags (java.util.HashMap.)
    :context-words (java.util.HashMap.)
-   :context-tags (java.util.HashMap.)})
+   :context-tags (java.util.HashMap.)
+   :context-vector nil})
 
 (defn remove-nonwords [j-hash]
   (doseq [nonword ["" empty-word "``" "''" "." "," "?" "!" "(" ")" ":" ";"]]
@@ -127,14 +128,22 @@
     (vec (concat (map #(get ctx-words % 0) dict-order)   ; number of occurrences of each dict word in w, or 0
                  (map #(get ctx-tags % 0) pos-order))))) ; same for POS tags
 
-(defn compare-words [dict-entry1 dict-entry2 dict dict-order pos-order]
-  (let [vec1 (create-context-vector dict-entry1 dict dict-order pos-order)
-        vec2 (create-context-vector dict-entry2 dict dict-order pos-order)
+(defn compare-words [dict-entry1 dict-entry2]
+  (let [vec1 (:context-vector dict-entry1)
+        vec2 (:context-vector dict-entry2)
         similarity (cosine-similarity vec1 vec2)]
     (->SimilarityResult dict-entry1 dict-entry2 similarity)))
 
 (defn sorted-keys [dictionary]
   (sort (.keySet dictionary)))
+
+(defn add-context-vectors [dictionary dict-order pos-order]
+  (doseq [word (.keySet dictionary)]
+    (let [entry (.get dictionary word)]
+      (.put dictionary word
+            (assoc entry
+              :context-vector
+              (create-context-vector entry dictionary dict-order pos-order))))))
 
 ;; ----- context extraction, IO:
 
@@ -183,7 +192,7 @@
       sorted-similarity-results)))
 
 (defn find-similar-words-updating-results
-  [entry dictionary dict-order pos-order sorted-similarity-results]
+  [entry dictionary dict-order sorted-similarity-results]
   (let [num-words (count (.keySet dictionary))]
     (loop [i 0
            top-words sorted-similarity-results]
@@ -194,13 +203,8 @@
                   (some #(and (= (:entry1 %) entry2) ; similarity symmetry
                               (= (:entry2 %) entry)) top-words))
             (recur (inc i) top-words)
-            (recur (inc i) (update-most-similar
-                            top-words
-                            (compare-words entry
-                                           entry2 
-                                           dictionary
-                                           dict-order
-                                           pos-order)))))))))
+            (recur (inc i) (update-most-similar top-words
+                                                (compare-words entry entry2)))))))))
 
 
 (defn get-n-most-similar-words [dictionary pos-set n]
@@ -208,6 +212,9 @@
    (let [num-words (count (.keySet dictionary))
          dict-order (sort (.keySet dictionary))
          pos-order (sort pos-set)]
+     (println "adding context vectors to dictionary ...")
+     (add-context-vectors dictionary dict-order pos-order)
+     (println "comparing ...")
      (loop [i 0
             top-n-words (take n (repeat (->SimilarityResult nil nil 0)))]
        (when (zero? (mod i 10)) (println "compared " i " words"))
@@ -218,7 +225,6 @@
                   (find-similar-words-updating-results entry
                                                        dictionary
                                                        dict-order
-                                                       pos-order
                                                        top-n-words))))))))
 ;; FIXME refactor the above mess into something using a carthesian product
 
