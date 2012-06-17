@@ -22,14 +22,14 @@
    :context-words (java.util.HashMap.)
    :context-tags (java.util.HashMap.)})
 
+(defn remove-nonwords [j-hash]
+  (doseq [nonword ["" empty-word "``" "''" "." "," "?" "!" "(" ")"]]
+    (.remove j-hash nonword)))
+
 (defn clean-dictionary-entry [entry]
-  (let [remove-nonwords
-        (fn [j-hash]
-          (doseq [nonword ["" empty-word "``" "''" "." "," "?" "!" "(" ")"]]
-            (.remove j-hash nonword)))]
-    (remove-nonwords (:pos-tags entry))
-    (remove-nonwords (:context-words entry))
-    (remove-nonwords (:context-tags entry))))
+  (remove-nonwords (:pos-tags entry))
+  (remove-nonwords (:context-words entry))
+  (remove-nonwords (:context-tags entry)))
 
 ;; ----- IO and parsing 
 
@@ -93,6 +93,7 @@
                       (if (nil? (.get de-ctx-tags ctx-tag))
                         1
                         (inc (.get de-ctx-tags ctx-tag)))))))))))
+  (remove-nonwords dictionary)
   (doseq [key (.keySet dictionary)]
     (clean-dictionary-entry (.get dictionary key))))
 
@@ -115,5 +116,16 @@
                             (clojure.string/join " " (:context-words dict-entry))
                             "\t"
                             (clojure.string/join " " (:context-tags dict-entry))
-                            "\n")))))))
+                            "\n")))))
+    dictionary))
 
+
+(defn -main [& args]
+  (if (> 4 (count args))
+    (do (println "args: <INPUT-FILE> <OUTPUT-FILE> <WORD-WIN> <POS-WIN>")
+        (System/exit -1))
+    (let [dictionary (extract-words-and-contexts (nth args 0)
+                                                 (nth args 1)
+                                                 (Integer/parseInt (nth args 2))
+                                                 (Integer/parseInt (nth args 3)))]
+      (println (str "extracted " (count (.keySet dictionary)) " entries")))))
