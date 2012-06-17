@@ -23,7 +23,7 @@
    :context-tags (java.util.HashMap.)})
 
 (defn remove-nonwords [j-hash]
-  (doseq [nonword ["" empty-word "``" "''" "." "," "?" "!" "(" ")"]]
+  (doseq [nonword ["" empty-word "``" "''" "." "," "?" "!" "(" ")" ":" ";"]]
     (.remove j-hash nonword)))
 
 (defn clean-dictionary-entry [entry]
@@ -119,13 +119,28 @@
                             "\n")))))
     dictionary))
 
+(defn dump-pos-tags [dictionary pos-tag-file]
+  (let [pos-set (java.util.HashSet.)]
+    (doseq [word (.keySet dictionary)]
+      (let [dict-entry (.get dictionary word)]
+        (.addAll pos-set (:pos-tags dict-entry))))
+    (with-open [wrtr (writer pos-tag-file)]
+      (doseq [tag pos-set]
+        (.write wrtr (str tag "\n"))))
+    pos-set))
+    
 
 (defn -main [& args]
-  (if (> 4 (count args))
-    (do (println "args: <INPUT-FILE> <OUTPUT-FILE> <WORD-WIN> <POS-WIN>")
+  (if (> 5 (count args))
+    (do (println "args: <INPUT-FILE> <OUTPUT-FILE> "
+                 "<POS-TAG-OUTPUT-FILE> <WORD-WIN> <POS-WIN>")
         (System/exit -1))
     (let [dictionary (extract-words-and-contexts (nth args 0)
                                                  (nth args 1)
-                                                 (Integer/parseInt (nth args 2))
-                                                 (Integer/parseInt (nth args 3)))]
-      (println (str "extracted " (count (.keySet dictionary)) " entries")))))
+                                                 (Integer/parseInt (nth args 3))
+                                                 (Integer/parseInt (nth args 4)))
+          pos-set (dump-pos-tags dictionary (nth args 2))]
+      (println (str "extracted "
+                    (count (.keySet dictionary))
+                    " entries and "
+                    (count pos-set) " POS-tags")))))
