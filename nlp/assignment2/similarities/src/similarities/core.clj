@@ -213,14 +213,12 @@
        (if (<= num-words i)
          top-n-words
          (let [entry (.get dictionary (nth dict-order i))]
-           (if (<= num-words i)
-             top-n-words
-             (recur (inc i)
-                    (find-similar-words-updating-results entry
-                                                         dictionary
-                                                         dict-order
-                                                         pos-order
-                                                         top-n-words)))))))))
+           (recur (inc i)
+                  (find-similar-words-updating-results entry
+                                                       dictionary
+                                                       dict-order
+                                                       pos-order
+                                                       top-n-words))))))))
 ;; FIXME refactor the above mess into something using a carthesian product
 
 ;; ----- main
