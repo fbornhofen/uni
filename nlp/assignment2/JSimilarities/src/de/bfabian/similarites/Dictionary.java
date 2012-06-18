@@ -45,6 +45,9 @@ public class Dictionary {
 			String[] splitLine = line.split("\\s");
 			for (int j = 0; j < splitLine.length; j++) { // jth word in line
 				String[] wordAndTag = splitLine[j].split("\\/");
+				if (wordAndTag.length != 2) {
+					continue;
+				}
 				String word = wordAndTag[0];
 				String tag = wordAndTag[1];
 				DictionaryEntry entry;

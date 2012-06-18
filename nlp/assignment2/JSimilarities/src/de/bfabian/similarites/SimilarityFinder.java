@@ -53,13 +53,16 @@ public class SimilarityFinder {
 	
 	double dotProduct(DictionaryEntry e1, DictionaryEntry e2) {
 		double result = 0.0;
+		String tmp;
 		for (int i = 0; i < wordsSize; i++) {
-			result += e1.contextWordOccurrences(orderVec.wordAt(i)) *
-					e2.contextWordOccurrences(orderVec.wordAt(i));
+			tmp = orderVec.wordAt(i);
+			result += e1.contextWordOccurrences(tmp) *
+					e2.contextWordOccurrences(tmp);
 		}
 		for (int i = 0; i < tagsSize; i++) {
-			result += e1.contextTagOccurrences(orderVec.tagAt(i)) *
-					e2.contextTagOccurrences(orderVec.tagAt(i));
+			tmp = orderVec.tagAt(i);
+			result += e1.contextTagOccurrences(tmp) *
+					e2.contextTagOccurrences(tmp);
 		}
 		return result;
 	}
