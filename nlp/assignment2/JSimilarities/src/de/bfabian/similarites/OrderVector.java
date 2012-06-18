@@ -12,8 +12,8 @@ import java.util.Vector;
  * of an imaginary vector for cosine similarity calculation.
  */
 public class OrderVector {
-	Vector<String> wordVec;
-	Vector<String> tagVec;
+	public Vector<String> wordVec;
+	public Vector<String> tagVec;
 	
 	public OrderVector(ArrayList<String> words, ArrayList<String> tags) {
 		this.wordVec = new Vector<String>(words);
@@ -34,6 +34,12 @@ public class OrderVector {
 	
 	public String tagAt(int index) {
 		return tagVec.get(index);
+	}
+	
+	public Object[] toArray() {
+		Vector<String> result = new Vector<String>(wordVec);
+		result.addAll(tagVec);
+		return result.toArray();
 	}
 	
 	public String toString() {

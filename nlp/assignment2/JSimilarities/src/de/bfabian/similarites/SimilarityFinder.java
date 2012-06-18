@@ -53,7 +53,12 @@ public class SimilarityFinder {
 	
 	double dotProduct(DictionaryEntry e1, DictionaryEntry e2) {
 		double result = 0.0;
-		String tmp;
+		for (int i = 0; i < e1.similarityVector.length; i++) {
+			result += e1.similarityVector[i] * e2.similarityVector[i];
+		}
+		
+		// non-cached solution
+		/*String tmp; // significant speedup by not calling contextXXXOccurrences twice
 		for (int i = 0; i < wordsSize; i++) {
 			tmp = orderVec.wordAt(i);
 			result += e1.contextWordOccurrences(tmp) *
@@ -63,8 +68,24 @@ public class SimilarityFinder {
 			tmp = orderVec.tagAt(i);
 			result += e1.contextTagOccurrences(tmp) *
 					e2.contextTagOccurrences(tmp);
-		}
+		}*/
 		return result;
+	}
+	
+	int[] createSimilarityVectorFor(DictionaryEntry e) {
+		int[] res = new int[wordsSize + tagsSize];
+		int i, j;
+		for (i = 0, j = 0; j < wordsSize; i++, j++) {
+			res[i] = e.contextWordOccurrences(orderVec.wordAt(j));
+		}
+		for (j = 0; j < tagsSize; i++, j++) {
+			res[i] = e.contextTagOccurrences(orderVec.tagAt(j));
+		}
+		return res;
+	}
+	
+	void addSimilarityVectorFor(DictionaryEntry e) {
+		e.similarityVector = createSimilarityVectorFor(e);
 	}
 	
 	ArrayList<SimilarityResult> nMostSimilarWords(int n) {
@@ -76,11 +97,20 @@ public class SimilarityFinder {
 		int totalComparisons = nWords*nWords/2;
 		int onePercent = totalComparisons / 100;
 		int nextPercentage = 1;
+		
+		// magnitudes faster by caching similarity vectors as raw arrays
+		// beware of memory consumption!
+		System.out.println("Creating " + nWords + " similarity vectors");
+		for (int i = 0; i < nWords; i++) {
+			addSimilarityVectorFor(dict.get(sortedWords.get(i)));
+		}
+		
+		System.out.println("crunching!");
 		for (int i = 0; i < nWords; i++) {
 			for (int j = i + 1; j < nWords; j++) {
 				String w1 = sortedWords.get(i),
 					w2 = sortedWords.get(j);
-				topItems.add(this.compareWords(w1, w2));
+				topItems.add(compareWords(w1, w2));
 				if (++nComparisons > nextPercentage*onePercent) {
 					System.out.println(nextPercentage++ + "% ...");
 				}
