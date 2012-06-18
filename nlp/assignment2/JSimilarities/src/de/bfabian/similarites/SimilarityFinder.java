@@ -33,6 +33,9 @@ public class SimilarityFinder {
 	}
 	
 	double magnitude(DictionaryEntry e) {
+		if (e.magnitude != null) {
+			return e.magnitude.doubleValue();
+		}
 		double result = 0.0;
 		int tmp = 0;
 		for (int i = 0; i < wordsSize; i++) {
@@ -43,7 +46,9 @@ public class SimilarityFinder {
 			tmp = e.contextTagOccurrences(orderVec.tagAt(i));
 			result += tmp * tmp;
 		}
-		return Math.sqrt(result);
+		result = Math.sqrt(result);
+		e.magnitude = result;
+		return result;
 	}
 	
 	double dotProduct(DictionaryEntry e1, DictionaryEntry e2) {
