@@ -1,11 +1,14 @@
 package de.bfabian.similarites;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 public class Dictionary {
 
@@ -87,5 +90,18 @@ public class Dictionary {
 			System.err.println("Error: " + e.getMessage());
 		}
 		return contents;
+	}
+	
+	void dumpToFile(String fileName) {
+		try {
+			FileWriter writer = new FileWriter(fileName);
+			BufferedWriter bw = new BufferedWriter(writer);
+			Iterator curWord = words.keySet().iterator();
+			while (curWord.hasNext()) {
+				curWord.next();
+			}
+		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+		}
 	}
 }
