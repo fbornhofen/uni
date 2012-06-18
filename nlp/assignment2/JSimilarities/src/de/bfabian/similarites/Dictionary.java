@@ -87,21 +87,26 @@ public class Dictionary {
 			}
 			in.close();
 		} catch (Exception e) {
-			System.err.println("Error: " + e.getMessage());
+			System.err.println("Error: (" + fileName + ") " + e.getMessage());
 		}
 		return contents;
 	}
 	
 	void dumpToFile(String fileName) {
 		try {
+			System.out.println("dumping " + words.keySet().size() + " entries ");
+			
 			FileWriter writer = new FileWriter(fileName);
 			BufferedWriter bw = new BufferedWriter(writer);
-			Iterator curWord = words.keySet().iterator();
+			Iterator<String> curWord = words.keySet().iterator();
 			while (curWord.hasNext()) {
-				curWord.next();
+				DictionaryEntry entry = words.get(curWord.next());
+				System.out.println(entry.word);
+				bw.write(entry.toString() + "\n");
 			}
+			bw.close();
 		} catch (Exception e) {
-			System.err.println("Error: " + e.getMessage());
+			System.err.println("Error: (" + fileName + ") " + e.getMessage() + "\n" + e);
 		}
 	}
 }
