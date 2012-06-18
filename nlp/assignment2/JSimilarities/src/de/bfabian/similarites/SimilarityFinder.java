@@ -69,11 +69,18 @@ public class SimilarityFinder {
 		ArrayList<String> sortedWords = new ArrayList<String>(dict.words.keySet());
 		Collections.sort(sortedWords, String.CASE_INSENSITIVE_ORDER);
 		int nWords = sortedWords.size();
+		int nComparisons = 0;
+		int totalComparisons = nWords*nWords/2;
+		int onePercent = totalComparisons / 100;
+		int nextPercentage = 1;
 		for (int i = 0; i < nWords; i++) {
 			for (int j = i + 1; j < nWords; j++) {
 				String w1 = sortedWords.get(i),
 					w2 = sortedWords.get(j);
 				topItems.add(this.compareWords(w1, w2));
+				if (++nComparisons > nextPercentage*onePercent) {
+					System.out.println(nextPercentage++ + "% ...");
+				}
 			}
 		}
 		return topItems.getTopItems();
