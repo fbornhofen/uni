@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
 
 public class Dictionary {
 
@@ -111,26 +110,18 @@ public class Dictionary {
 		}
 	}
 	
-	Vector<String> createOrderVector() {
-		ArrayList<String> allTags = this.sortedList(posTags);
-		ArrayList<String> allWords = this.sortedList(words.keySet());
-		Vector<String> result = new Vector<String>(allWords);
-		result.addAll(allTags);
-		return result;
-	}
-	
-	public void printOrderVector() {
-		System.out.print("(");
-		Vector<String> orderVector = this.createOrderVector();
-		for (int i = 0; i < orderVector.size(); i++) {
-			System.out.print(orderVector.get(i) + " ");
-		}
-		System.out.println(")");
+	OrderVector createOrderVector() {
+		return new OrderVector(this.sortedList(posTags), 
+								this.sortedList(words.keySet()));
 	}
 	
 	ArrayList<String> sortedList(Collection<String> aCollection) {
 		ArrayList<String> result = new ArrayList<String>(aCollection);
 		java.util.Collections.sort(result, String.CASE_INSENSITIVE_ORDER);
 		return result;
+	}
+	
+	public DictionaryEntry get(String word) {
+		return words.get(word);
 	}
 }

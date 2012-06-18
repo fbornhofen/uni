@@ -16,7 +16,25 @@ public class DictionaryEntry {
 		this.contextWords = new HashMap<String, Integer>();
 		this.contextTags = new HashMap<String, Integer>();
 	}
+
+	public int contextWordOccurrences(String word) {
+		return this.getOrZero(contextWords, word);
+	}
+
 	
+	public int contextTagOccurrences(String tag) {
+		return this.getOrZero(contextTags, tag);
+	}
+	
+	int getOrZero(HashMap<String, Integer> map, String key) {
+		Integer res = map.get(key);
+		if (res == null) {
+			return 0;
+		}
+		return res.intValue();
+	}
+
+
 	public String toString() {
 		String result = word + "\t";
 		result += this.hashMapToString(contextWords);
