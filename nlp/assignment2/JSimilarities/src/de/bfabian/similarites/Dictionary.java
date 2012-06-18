@@ -7,20 +7,24 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Vector;
 
 public class Dictionary {
 
 	HashMap<String, DictionaryEntry> words;
-	ArrayList<String> posTags;
+	HashSet<String> posTags;
 	int wordWin;
 	int posWin;
 	
 	public Dictionary(String fileName, int contextWindow, int posWindow) {
 		this.wordWin = contextWindow;
 		this.posWin = posWindow;
-		words = new HashMap<String, DictionaryEntry>();
+		this.words = new HashMap<String, DictionaryEntry>();
+		this.posTags = new HashSet<String>();
 		ArrayList<String> corpus = this.readFromCorpus(fileName);
 		this.fillDictionary(corpus);
 		System.out.println("Extracted " + words.size() + " words");
@@ -53,13 +57,12 @@ public class Dictionary {
 					entry = new DictionaryEntry(word);
 					words.put(word, entry);
 				}
-				words.get(word);
+				posTags.add(tag);
 				
 				// update number of occurrences of the current POS tag
 				this.increaseOrInitialize(entry.posTags, tag);
 				
 				// extract context
-				System.out.println("Word: " + wordAndTag[0]);
 				for (int k = j - winSize; k <= j + winSize; k++) { // kth context word
 					if (k < 0 || k == j || k >= splitLine.length) continue;
 					String[] ctxWordAndTag = splitLine[k].split("\\/");
@@ -69,7 +72,6 @@ public class Dictionary {
 					if (k >= j - posWin && k <= j + posWin) {
 						this.increaseOrInitialize(entry.contextTags, ctxWordAndTag[1]);
 					}
-					System.out.println("\tWord: " + ctxWordAndTag[0]);
 				}
 			}
 		}
@@ -101,12 +103,34 @@ public class Dictionary {
 			Iterator<String> curWord = words.keySet().iterator();
 			while (curWord.hasNext()) {
 				DictionaryEntry entry = words.get(curWord.next());
-				System.out.println(entry.word);
 				bw.write(entry.toString() + "\n");
 			}
 			bw.close();
 		} catch (Exception e) {
 			System.err.println("Error: (" + fileName + ") " + e.getMessage() + "\n" + e);
 		}
+	}
+	
+	Vector<String> createOrderVector() {
+		ArrayList<String> allTags = this.sortedList(posTags);
+		ArrayList<String> allWords = this.sortedList(words.keySet());
+		Vector<String> result = new Vector<String>(allWords);
+		result.addAll(allTags);
+		return result;
+	}
+	
+	public void printOrderVector() {
+		System.out.print("(");
+		Vector<String> orderVector = this.createOrderVector();
+		for (int i = 0; i < orderVector.size(); i++) {
+			System.out.print(orderVector.get(i) + " ");
+		}
+		System.out.println(")");
+	}
+	
+	ArrayList<String> sortedList(Collection<String> aCollection) {
+		ArrayList<String> result = new ArrayList<String>(aCollection);
+		java.util.Collections.sort(result, String.CASE_INSENSITIVE_ORDER);
+		return result;
 	}
 }
