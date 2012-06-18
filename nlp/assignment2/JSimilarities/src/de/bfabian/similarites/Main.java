@@ -3,6 +3,7 @@ package de.bfabian.similarites;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
 public class Main {
@@ -30,7 +31,6 @@ public class Main {
 		System.out.println("Now finding " + nWords + " most similar words ...");
 		ArrayList<SimilarityResult> mostSimilarWords = sf.nMostSimilarWords(nWords);
 		dumpSimilarities(mostSimilarWords, similaritiesOutFile);
-		
 	}
 	
 	static void dumpSimilarities(ArrayList<SimilarityResult> aList, String fileName) {
