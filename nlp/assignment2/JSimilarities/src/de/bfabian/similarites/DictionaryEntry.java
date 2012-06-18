@@ -34,7 +34,6 @@ public class DictionaryEntry {
 		return res.intValue();
 	}
 
-
 	public String toString() {
 		String result = word + "\t";
 		result += this.hashMapToString(contextWords);

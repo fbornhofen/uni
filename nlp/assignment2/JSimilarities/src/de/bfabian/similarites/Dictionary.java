@@ -26,7 +26,6 @@ public class Dictionary {
 		this.posTags = new HashSet<String>();
 		ArrayList<String> corpus = this.readFromCorpus(fileName);
 		this.fillDictionary(corpus);
-		System.out.println("Extracted " + words.size() + " words");
 	}
 
 	private void increaseOrInitialize(HashMap<String,Integer> map, String key) {
@@ -95,8 +94,6 @@ public class Dictionary {
 	
 	void dumpToFile(String fileName) {
 		try {
-			System.out.println("dumping " + words.keySet().size() + " entries ");
-			
 			FileWriter writer = new FileWriter(fileName);
 			BufferedWriter bw = new BufferedWriter(writer);
 			Iterator<String> curWord = words.keySet().iterator();

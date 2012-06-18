@@ -1,5 +1,8 @@
 package de.bfabian.similarites;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 public class SimilarityFinder {
 	
 	Dictionary dict;
@@ -7,7 +10,7 @@ public class SimilarityFinder {
 	int wordsSize;
 	int tagsSize;
 	
-	public SimilarityFinder(Dictionary dictionary, int nItems) {
+	public SimilarityFinder(Dictionary dictionary) {
 		this.dict = dictionary;
 		this.orderVec = dict.createOrderVector();
 		this.wordsSize = orderVec.wordsSize();
@@ -55,4 +58,28 @@ public class SimilarityFinder {
 		}
 		return result;
 	}
+	
+	ArrayList<SimilarityResult> nMostSimilarWords(int n) {
+		//FixedSizePriorityQueue<SimilarityResult> topItems = new FixedSizePriorityQueue<SimilarityResult>(n);
+		ArrayList<SimilarityResult> topItems = new ArrayList<SimilarityResult>();
+		
+		ArrayList<String> sortedWords = new ArrayList<String>(dict.words.keySet());
+		System.out.println("nMost... keySet size is " + sortedWords.size());
+		Collections.sort(sortedWords, String.CASE_INSENSITIVE_ORDER);
+		int nWords = sortedWords.size();
+		for (int i = 0; i < nWords; i++) {
+			for (int j = i + 1; j < nWords; j++) {
+				String w1 = sortedWords.get(i),
+					w2 = sortedWords.get(j);
+				System.out.println("CMP " + w1 + " <-> " + w2 + " [TI SIZE: " + topItems.size() + "]");
+				topItems.add(this.compareWords(w1, w2));
+			}
+		}
+		Collections.sort(topItems);
+		System.out.println("Top items size: " + topItems.size());
+		//ArrayList<SimilarityResult> result = new ArrayList<SimilarityResult>(topItems);
+		//return result;
+		return topItems;
+	}
+	
 }

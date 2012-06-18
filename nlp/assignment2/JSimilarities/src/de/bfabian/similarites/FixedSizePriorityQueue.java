@@ -11,7 +11,7 @@ import java.util.TreeSet;
 public class FixedSizePriorityQueue<E> extends TreeSet<E> {
 
 	private int elementsLeft;
-
+	
 	private static class NaturalComparator<T extends Comparable<? super T>> implements Comparator<T> {
 	    @Override
 	    public int compare(T o1, T o2) {
