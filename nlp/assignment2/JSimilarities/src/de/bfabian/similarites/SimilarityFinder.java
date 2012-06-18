@@ -84,8 +84,12 @@ public class SimilarityFinder {
 		return res;
 	}
 	
-	void addSimilarityVectorFor(DictionaryEntry e) {
+	void addSimilarityVectorTo(DictionaryEntry e) {
 		e.similarityVector = createSimilarityVectorFor(e);
+	}
+	
+	void removeSimilarityVectorFrom(DictionaryEntry e) {
+		e.similarityVector = null;
 	}
 	
 	ArrayList<SimilarityResult> nMostSimilarWords(int n) {
@@ -102,19 +106,25 @@ public class SimilarityFinder {
 		// beware of memory consumption!
 		System.out.println("Creating " + nWords + " similarity vectors");
 		for (int i = 0; i < nWords; i++) {
-			addSimilarityVectorFor(dict.get(sortedWords.get(i)));
+			addSimilarityVectorTo(dict.get(sortedWords.get(i)));
 		}
 		
 		System.out.println("crunching!");
 		for (int i = 0; i < nWords; i++) {
+			String w1 = sortedWords.get(i);
+			//DictionaryEntry e1 = dict.get(w1);
+			//addSimilarityVectorTo(e1);
 			for (int j = i + 1; j < nWords; j++) {
-				String w1 = sortedWords.get(i),
-					w2 = sortedWords.get(j);
+				String w2 = sortedWords.get(j);
+				//DictionaryEntry e2 = dict.get(w2);
+				//addSimilarityVectorTo(e2);
 				topItems.add(compareWords(w1, w2));
 				if (++nComparisons > nextPercentage*onePercent) {
 					System.out.println(nextPercentage++ + "% ...");
 				}
+				//removeSimilarityVectorFrom(e2);
 			}
+			//removeSimilarityVectorFrom(e1);
 		}
 		return topItems.getTopItems();
 	}
