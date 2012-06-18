@@ -40,7 +40,6 @@ public class SimilarityFinder {
 			tmp = e.contextTagOccurrences(orderVec.tagAt(i));
 			result += tmp * tmp;
 		}
-		System.out.println("mag(" + e.word + ") = " + result);
 		return Math.sqrt(result);
 	}
 	
@@ -54,7 +53,6 @@ public class SimilarityFinder {
 			result += e1.contextTagOccurrences(orderVec.tagAt(i)) *
 					e2.contextTagOccurrences(orderVec.tagAt(i));
 		}
-		System.out.println("dot(" + e1.word + ", " + e2.word + ") = " + result);
 		return result;
 	}
 }

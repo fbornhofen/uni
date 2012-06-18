@@ -111,8 +111,7 @@ public class Dictionary {
 	}
 	
 	OrderVector createOrderVector() {
-		return new OrderVector(this.sortedList(posTags), 
-								this.sortedList(words.keySet()));
+		return new OrderVector(this.sortedList(words.keySet()), this.sortedList(posTags));
 	}
 	
 	ArrayList<String> sortedList(Collection<String> aCollection) {

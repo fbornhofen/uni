@@ -25,7 +25,7 @@ public class OrderVector {
 	}
 	
 	public int tagsSize() {
-		return wordVec.size();
+		return tagVec.size();
 	}
 	
 	public String wordAt(int index) {
