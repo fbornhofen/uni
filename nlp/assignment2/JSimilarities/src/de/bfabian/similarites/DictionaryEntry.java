@@ -2,7 +2,6 @@ package de.bfabian.similarites;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Set;
 
 public class DictionaryEntry {
 
@@ -20,17 +19,19 @@ public class DictionaryEntry {
 	
 	public String toString() {
 		String result = word + "\t";
-		result += this.setToString(contextWords.keySet());
+		result += this.hashMapToString(contextWords);
 		result += "\t";
-		result += this.setToString(contextTags.keySet());
+		result += this.hashMapToString(contextTags);
 		return result;
 	}
 	
-	String setToString(Set<String> aSet) {
+	String hashMapToString(HashMap<String, Integer> hashMap) {
 		String res = "";
-		Iterator<String> it = aSet.iterator();
+		Iterator<String> it = hashMap.keySet().iterator();
 		while (it.hasNext()) {
-			res += it.next() + " ";
+			String key = it.next();
+			res += key + " ";
+			//res += key + "=" + hashMap.get(key) + " ";
 		}
 		return res;
 	}
