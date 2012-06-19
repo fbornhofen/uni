@@ -55,6 +55,7 @@ public class SimilarityFinder {
 		double result = 0.0;
 		int indexIndex = 0;
 		if (e1.dotProductIndices == null) {
+			// naive. here we cache all relevant indices
 			e1.dotProductIndices = new int[e1.similarityVector.length + 1];
 			for (int i = 0; i < e1.similarityVector.length; i++) {
 				if (e1.similarityVector[i] > 0) {
@@ -64,6 +65,7 @@ public class SimilarityFinder {
 			}
 			e1.dotProductIndices[indexIndex] = 0;
 		} else {
+			// cache is there already? fine, us it!
 			for (int i = 0; i < e1.dotProductIndices.length; i++) {
 				if (e1.dotProductIndices[i] == 0) {
 					break;
@@ -119,6 +121,9 @@ public class SimilarityFinder {
 		
 		// magnitudes faster by caching similarity vectors as raw arrays
 		// beware of memory consumption!
+		// FIXME: improve memory usage by storing 
+		//		  [(i, vi) | i: nonzero index in simVec, vi: simVec[i]]
+		//		  after creating each similarity vector
 		System.out.println("Creating " + nWords + " similarity vectors");
 		for (int i = 0; i < nWords; i++) {
 			addSimilarityVectorTo(dict.get(sortedWords.get(i)));
