@@ -11,6 +11,8 @@ public class DictionaryEntry {
 	public HashMap<String, Integer> contextTags;
 	public Double magnitude; // cache for SimilarityFinder
 	public int[] similarityVector;
+	public int[] dotProductIndices; // cache indices into similarity vector
+									// that are relevant for dotProduct
 	
 	public DictionaryEntry(String word) {
 		this.word = word;
@@ -19,6 +21,7 @@ public class DictionaryEntry {
 		this.contextTags = new HashMap<String, Integer>();
 		this.magnitude = null;
 		this.similarityVector = null;
+		this.dotProductIndices = null;
 	}
 
 	public int contextWordOccurrences(String word) {

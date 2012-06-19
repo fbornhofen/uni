@@ -53,10 +53,25 @@ public class SimilarityFinder {
 	
 	double dotProduct(DictionaryEntry e1, DictionaryEntry e2) {
 		double result = 0.0;
-		for (int i = 0; i < e1.similarityVector.length; i++) {
-			result += e1.similarityVector[i] * e2.similarityVector[i];
+		int indexIndex = 0;
+		if (e1.dotProductIndices == null) {
+			e1.dotProductIndices = new int[e1.similarityVector.length + 1];
+			for (int i = 0; i < e1.similarityVector.length; i++) {
+				if (e1.similarityVector[i] > 0) {
+					result += e1.similarityVector[i] * e2.similarityVector[i];
+					e1.dotProductIndices[indexIndex++] = i;
+				}
+			}
+			e1.dotProductIndices[indexIndex] = 0;
+		} else {
+			for (int i = 0; i < e1.dotProductIndices.length; i++) {
+				if (e1.dotProductIndices[i] == 0) {
+					break;
+				}
+				result += e1.similarityVector[e1.dotProductIndices[i]] * e2.similarityVector[e1.dotProductIndices[i]];
+			}
 		}
-		
+			
 		// non-cached solution
 		/*String tmp; // significant speedup by not calling contextXXXOccurrences twice
 		for (int i = 0; i < wordsSize; i++) {
@@ -112,7 +127,7 @@ public class SimilarityFinder {
 		System.out.println("crunching!");
 		for (int i = 0; i < nWords; i++) {
 			String w1 = sortedWords.get(i);
-			//DictionaryEntry e1 = dict.get(w1);
+			DictionaryEntry e1 = dict.get(w1);
 			//addSimilarityVectorTo(e1);
 			for (int j = i + 1; j < nWords; j++) {
 				String w2 = sortedWords.get(j);
@@ -124,6 +139,7 @@ public class SimilarityFinder {
 				}
 				//removeSimilarityVectorFrom(e2);
 			}
+			e1.dotProductIndices = null;
 			//removeSimilarityVectorFrom(e1);
 		}
 		return topItems.getTopItems();
