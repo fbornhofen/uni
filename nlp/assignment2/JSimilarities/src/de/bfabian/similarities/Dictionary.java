@@ -1,4 +1,4 @@
-package de.bfabian.similarites;
+package de.bfabian.similarities;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

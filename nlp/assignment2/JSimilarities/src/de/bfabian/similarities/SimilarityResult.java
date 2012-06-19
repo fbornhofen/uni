@@ -1,4 +1,4 @@
-package de.bfabian.similarites;
+package de.bfabian.similarities;
 
 public class SimilarityResult implements Comparable<SimilarityResult> {
 	public double similarity;

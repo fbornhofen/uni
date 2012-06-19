@@ -1,4 +1,4 @@
-package de.bfabian.similarites;
+package de.bfabian.similarities;
 
 import java.util.HashMap;
 import java.util.Iterator;

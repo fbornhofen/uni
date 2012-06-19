@@ -1,10 +1,9 @@
-package de.bfabian.similarites;
+package de.bfabian.similarities;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
+
 
 public class Main {
 
